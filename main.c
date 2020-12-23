@@ -45,6 +45,10 @@ char *message =
 #define TYPE_INCREASE    ((BASE) << 2)
 #define TYPE_NULL        ((BASE) << 3)
 
+#define STR_TYPE_STATIC     "Static"
+#define STR_TYPE_PWD        "Pwd"
+#define STR_TYPE_INCREASE   "Increase"
+
 #define MAX_SKIP 20
 typedef struct Password {
     char* prefix;
@@ -93,22 +97,13 @@ static Password* getpwdItem(cJSON* c_js){
     return pwditem;
 }
 
-void add2listTail(HeaderList* s, cJSON* dt_json)  {
+void add2listTail(HeaderList* s, cJSON* dt_json, int type)  {
     assert(s);
     PList new = malloc(sizeof(List));
     cJSON* temp;
-    new->type = TYPE_NULL;
-    if (dt_json->string !=NULL){
-        if (strcmp(dt_json->string, "Pwd")){
-            temp = cJSON_GetObjectItem(dt_json, "address");
-            new->type = TYPE_PWD;
-        }else if (strcmp(dt_json->string, "Static")){
-            new->type = TYPE_STATIC;
-
-        } else if (strcmp(dt_json->string, "Increase")){
-            new->type = TYPE_INCREASE;
-        }
-    } 
+    printf("add2listTail calling \r\n");
+    new->type = type;
+ 
     printf("chear:(%s)  dt_json->type = %d , new->type = %d \r\n",dt_json->string, dt_json->type, new->type);
     if (s->_phead == NULL){
         s->_phead = new;
@@ -132,9 +127,20 @@ static void traveralJSON(cJSON* note ){
     cJSON* item = NULL;
     if (note == NULL)
         return;
+
+    printf("traveral %s : \r\n ", note->string, note->valuestring);
+    if (note->string != NULL) {
+        if (strcmp(note->string, STR_TYPE_PWD)){
+            add2listTail(&header, note, TYPE_PWD);
+        }
+        else if (strcmp(note->string, STR_TYPE_STATIC)){
+            add2listTail(&header, note, TYPE_STATIC);
+        }
+        else if (strcmp(note->string, STR_TYPE_INCREASE)){
+            add2listTail(&header, note, TYPE_INCREASE);
+        }
+    }
     
-    add2listTail(&header, note);
-    //printf("%s : \r\n ", note->string, note->valuestring);
     switch(note->type){
         case cJSON_String:
             printf("%s : %s \r\n",note->string, note->valuestring);
