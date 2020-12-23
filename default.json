@@ -1,0 +1,16 @@
+{
+    "Static":"Production",
+    "Pwd" : [{
+        "Prefix":"CMCC-",
+        "Postifix":"-5G",
+        "Length": 8 ,
+        "SkipArry":["i","l","2"]
+    }],
+    "Increase": [{
+        "Prefix":"Protal",
+        "Base": "000001",
+        "Interval":1
+    }]
+}
+
+
