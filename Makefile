@@ -12,7 +12,7 @@ R_CFLAGS = $(PIC_FLAGS) -pedantic -Wall -Werror
 
 CJSON_TEST = test
 CJSON_TEST_SRC = cJSON.c main.c
-$(CJSON_TEST): $(CJSON_TEST_SRC) cJSON.h
+$(CJSON_TEST): $(CJSON_TEST_SRC) include/cJSON.h
 		$(CC) $(CJSON_TEST_SRC)  -o $@ $(LDLIBS) -I.
 
 ##########################################################################
