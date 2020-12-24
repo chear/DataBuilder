@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 #include "cJSON.h"
-
+#include "ruletype.h"
 #if 0  
 char *message = 
 "{                              \
@@ -39,42 +39,6 @@ char *message =
 #endif
 
 
-#define BASE (1)
-#define TYPE_STATIC      ((BASE) << 0)
-#define TYPE_PWD         ((BASE) << 1)
-#define TYPE_INCREASE    ((BASE) << 2)
-#define TYPE_NULL        ((BASE) << 3)
-
-#define STR_TYPE_STATIC     "Static"
-#define STR_TYPE_PWD        "Pwd"
-#define STR_TYPE_INCREASE   "Increase"
-
-#define MAX_SKIP 20
-typedef struct Password {
-    char* prefix;
-    char* postifix;
-    unsigned int length;
-    char skip[MAX_SKIP];
-}Password;
-
-
-typedef struct Increase {
-    char* prefix;
-    char* base;
-    unsigned int interval;
-}Increase;
-
-typedef struct list{
-    struct List* prev;
-    struct List* next;
-    int type;
-    struct Password* pwd;
-    struct Increase* inc; 
-}List ,*PList;
-
-typedef struct headlist {
-    PList _phead;
-}HeaderList;
 static HeaderList header;
 
 
@@ -84,27 +48,82 @@ void headerListInit(HeaderList* s) {
     s->_phead = NULL;
 }
 
-static Password* getpwdItem(cJSON* c_js){
-    cJSON* item;
-    struct Password* pwditem;
+static void getpwdItem(Password* pd, cJSON* c_js){
+    unsigned int size = 0 , i = 0;
+    cJSON* item = NULL;
+    cJSON* ary = NULL;
+    char skp[MAX_SKIP] = {0};
     if (c_js == NULL)
         return;  
-    item = cJSON_GetObjectItem(c_js, "Prefix");    
-    pwditem = (Password *)malloc(sizeof(Password));
-//    pwditem-> prefix = item->valuestring;
-    item = cJSON_GetObjectItem(c_js, "Prefix");    
+    if(pd == NULL){
+        pd = (Password *)malloc(sizeof(Password));
+        printf(" Password is null, re-malloc \n");
+    }
 
-    return pwditem;
+    item = cJSON_GetObjectItem(c_js, "Prefix");
+    memset(pd->prefix, 0 ,sizeof(pd->prefix));
+    strcpy(pd->prefix , item->valuestring);
+
+    item = cJSON_GetObjectItem(c_js, "Postifix"); 
+    memset(pd->postifix, 0 ,sizeof(pd->postifix));
+    strcpy(pd->postifix , item->valuestring);
+
+    item = cJSON_GetObjectItem(c_js, "Length");
+    pd->length = item->valuedouble;
+
+//    item = cJSON_GetObjectItem(c_js, "SkipArry");
+//    memset(pd->skip, 0 ,sizeof(pd->skip));
+//    size = cJSON_GetArraySize(item);
+//    for(i=0;i<size;i++){
+//        ary = cJSON_GetArrayItem(item, i);
+//        printf(" -%s-", ary->valuestring);
+// //       skp[i] = (char)ary->valuestring;
+////        pd->skip[i] = skp[i];
+//    }
+    free(pd);
 }
 
 void add2listTail(HeaderList* s, cJSON* dt_json, int type)  {
     assert(s);
     PList new = malloc(sizeof(List));
-    cJSON* temp;
+    cJSON* temp,item;
     printf("add2listTail calling \r\n");
     new->type = type;
  
-    printf("chear:(%s)  dt_json->type = %d , new->type = %d \r\n",dt_json->string, dt_json->type, new->type);
+    printf("chear:(%s)  dt_json->type = %d , new->type = %d",dt_json->string, dt_json->type, new->type);
+    
+    if (type == TYPE_STATIC) {
+        new->s_data = dt_json->valuestring;
+    } else if (type == TYPE_PWD) {
+        Password* pd = (Password *)malloc(sizeof(Password));
+        getpwdItem(pd, dt_json);
+        new->pwd = pd;
+    }
+
+
+//    switch(dt_json->type){
+//        case cJSON_String:
+////            printf("%s : %s \r\n",dt_json->string, dt_json->valuestring);
+//            break;
+//        case cJSON_Number:
+////            printf("%s : %d \r\n", dt_json->string, dt_json->valuedouble);
+//            break;
+//        case cJSON_Array:
+////            size = cJSON_GetArraySize(dt_json);
+////            for(i=0;i<size;i++){
+////                item = cJSON_GetArrayItem(dt_json, i);
+////                printf(" -%s-", item->valuestring);
+////            }
+//            break;
+//        case cJSON_Object:
+//        case cJSON_Raw:
+//        case cJSON_NULL:
+//            break;
+//        default:
+////            printf("defaul value for %s \r\n");
+//            break;
+//    }
+
     if (s->_phead == NULL){
         s->_phead = new;
         printf(" FIRST ADD \r\n");
@@ -128,40 +147,20 @@ static void traveralJSON(cJSON* note ){
     if (note == NULL)
         return;
 
-    printf("traveral %s : \r\n ", note->string, note->valuestring);
+    /* Only operate data format like 'Static', 'Pwd', 'Increase' */
+    printf("traveral %s : %s \r\n ", note->string, note->valuestring);
     if (note->string != NULL) {
-        if (strcmp(note->string, STR_TYPE_PWD)){
+        if (strcmp(note->string, STR_TYPE_PWD) ==0 ){
             add2listTail(&header, note, TYPE_PWD);
         }
-        else if (strcmp(note->string, STR_TYPE_STATIC)){
+        else if (strcmp(note->string, STR_TYPE_STATIC) ==0 ){
             add2listTail(&header, note, TYPE_STATIC);
         }
-        else if (strcmp(note->string, STR_TYPE_INCREASE)){
+        else if (strcmp(note->string, STR_TYPE_INCREASE) ==0 ){
             add2listTail(&header, note, TYPE_INCREASE);
         }
     }
     
-    switch(note->type){
-        case cJSON_String:
-            printf("%s : %s \r\n",note->string, note->valuestring);
-            break;
-        case cJSON_Number:
-            printf("%s : %d \r\n",note->string, note->valuedouble);
-            break;
-        case cJSON_Array:
-            size = cJSON_GetArraySize(note);
-            for(i=0;i<size;i++){
-                item = cJSON_GetArrayItem(note, i);
-                printf(" -%s-", item->valuestring);
-            }
-            break;
-        case cJSON_Object:
-        case cJSON_Raw:
-        case cJSON_NULL:
-            break;
-        default:
-            printf("defaul value for %s \r\n");
-    }
     /* traveral child*/
     traveralJSON(note->child);
     /* traveral next*/
@@ -187,7 +186,8 @@ int CJSON_CDECL main(void)
     int    skill_array_size = 0, i = 0 , count = 0;
     cJSON* cjson_skill_item = NULL;
     char* str = NULL;
-    
+    Password* pd;
+   
     /* print the version */
     printf("Version: %s\n", cJSON_Version());
 
@@ -239,18 +239,28 @@ int CJSON_CDECL main(void)
         printf("student:error\n");
     }
 #else
-
+    /* init */
     headerListInit( &header); 
+    /* parsring json */ 
     traveralJSON(cjson_test);
 
     printf("Start to print List !!!!\r\n");
-    HeaderList *ph = &header;
-    PList note = ph->_phead;
+    PList note = ((HeaderList *)&header)->_phead;
+        
     if (note == NULL) 
         printf("list its null \r\n");
     else {
         while(note->next){
-            printf("(%d) note->type = %d\r\n",count,note->type);
+            printf("(%d) note->type = %d",count,note->type);
+            switch(note->type){
+                case TYPE_STATIC:
+                    printf(" value = %s \r\n",note->s_data);
+                    break;
+                case TYPE_PWD:
+                    pd = note->pwd;
+                    printf(" value = \"%s\" , \"%s\" , %d \r\n",pd->prefix, pd->postifix , pd->length);
+                    break;
+            }
             note = note->next;
             count ++;        
         }
