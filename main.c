@@ -64,13 +64,13 @@ static void getpwdItem(Password* pd, cJSON* c_js){
     memset(pd->prefix, 0 ,sizeof(pd->prefix));
     strcpy(pd->prefix , item->valuestring);
 
-    item = cJSON_GetObjectItem(c_js, "Postifix"); 
-    memset(pd->postifix, 0 ,sizeof(pd->postifix));
-    strcpy(pd->postifix , item->valuestring);
-
-    item = cJSON_GetObjectItem(c_js, "Length");
-    pd->length = item->valuedouble;
-
+//    item = cJSON_GetObjectItem(c_js, "Postifix"); 
+//    memset(pd->postifix, 0 ,sizeof(pd->postifix));
+//    strcpy(pd->postifix , item->valuestring);
+//
+//    item = cJSON_GetObjectItem(c_js, "Length");
+//    pd->length = item->valuedouble;
+//
 //    item = cJSON_GetObjectItem(c_js, "SkipArry");
 //    memset(pd->skip, 0 ,sizeof(pd->skip));
 //    size = cJSON_GetArraySize(item);
@@ -96,8 +96,10 @@ void add2listTail(HeaderList* s, cJSON* dt_json, int type)  {
         new->s_data = dt_json->valuestring;
     } else if (type == TYPE_PWD) {
         Password* pd = (Password *)malloc(sizeof(Password));
-        getpwdItem(pd, dt_json);
         new->pwd = pd;
+        getpwdItem(pd, dt_json);
+    } else if (type == TYPE_INCREASE){
+        /* get & set 'Increase' data */
     }
 
 
@@ -250,7 +252,7 @@ int CJSON_CDECL main(void)
     if (note == NULL) 
         printf("list its null \r\n");
     else {
-        while(note->next){
+        while(note){
             printf("(%d) note->type = %d",count,note->type);
             switch(note->type){
                 case TYPE_STATIC:
@@ -262,6 +264,7 @@ int CJSON_CDECL main(void)
                     break;
             }
             note = note->next;
+            printf("xxxx\r\n");
             count ++;        
         }
     }
